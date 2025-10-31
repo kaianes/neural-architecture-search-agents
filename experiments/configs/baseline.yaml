@@ -1,0 +1,24 @@
+project_name: efficient-nas-ai-agents
+seed: 42
+
+# Dataset
+dataset: MNIST  # MNIST | FashionMNIST | CIFAR10
+batch_size: 128
+num_workers: 2
+
+# Training
+epochs: 2          # keep tiny for smoke tests
+lr: 0.01
+device: auto       # auto | cpu | cuda
+
+# NAS / Optuna
+optuna:
+  n_trials: 10
+  timeout: null    # seconds; set small for CI
+  direction: maximize
+
+# Logging & paths
+paths:
+  results: experiments/results
+  artifacts: experiments/artifacts
+  checkpoints: checkpoints

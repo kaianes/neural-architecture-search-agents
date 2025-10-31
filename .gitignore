@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+
+# Data & outputs
+data/
+experiments/results/
+experiments/artifacts/
+checkpoints/
+
+
+# IDE
+.vscode/
+.idea/
