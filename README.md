@@ -19,27 +19,7 @@ Designing deep neural network (DNN) architectures is complex and resource-intens
 
 ## System Architecture
 
-+--------------------+
-|  User / Researcher |
-+---------+----------+
-          |
-          v
-+--------------------+
-|  Coordinator Agent |
-| (Orchestrates run) |
-+---------+----------+
-          |
-          v
-+--------------------+
-|    Search Agent    |
-| (Optuna strategy)  |
-+---------+----------+
-          |
-          v
-+--------------------+
-|  Evaluation Agent  |
-| (Summarizes best)  |
-+--------------------+
+![System Architecture Diagram](docs/figures/mid-term-prototype-architecture.png)
 
 Agents communicate via in-memory handoffs; search results are summarized and logged.
 
