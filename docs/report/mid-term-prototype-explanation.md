@@ -1,7 +1,9 @@
 #  Mid-term Prototype Explanation 
 #### (Autonomous NAS, V0.1)
 
-![ANAS](../figures/ANAS-logo.png){: style="max-width: 40%; height: auto;" }
+<p align="center">
+  <img src="../figures/ANAS-logo.png" width="40%">
+</p>
 
 
 In this stage of the project, the project has a foundational system for an **autonomous Neural Architecture Search (NAS)** framework using Python.

@@ -1,6 +1,8 @@
 # Efficient Deep Neural Network Architecture Search Using AI Agents
 
-![ANAS](docs/figures/ANAS-logo.png){: style="max-width: 40%; height: auto;" }
+<p align="center">
+  <img src="docs/figures/ANAS-logo.png" width="40%">
+</p>
 
 
 ## Overview
@@ -23,7 +25,11 @@ Designing deep neural network (DNN) architectures is complex and resource-intens
 
 ## System Architecture
 
-![System Architecture Diagram](docs/figures/mid-term-prototype-architecture.png){: style="max-width: 60%; height: auto;" }
+
+<p align="center">
+  <img src="docs/figures/mid-term-prototype-architecture.png" width="40%">
+</p>
+
 
 Agents communicate via in-memory handoffs; search results are summarized and logged.
 
