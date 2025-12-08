@@ -5,6 +5,9 @@ import yaml
 from utils.logger import get_logger
 from utils.env import set_seed, get_device
 from nas.optuna_search import run_optuna_search
+from agents.search_agent import SearchAgent
+from agents.evaluation_agent import EvaluationAgent
+from agents.coordinator_agent import CoordinatorAgent
 
 
 def load_config(cfg_path: str):
@@ -22,7 +25,6 @@ def load_config(cfg_path: str):
 
 
 def ensure_dirs(cfg):
-    # Safe defaults used if 'paths' missing or null
     default_paths = {
         "results": "experiments/results",
         "artifacts": "experiments/artifacts",
@@ -55,9 +57,13 @@ def main():
     device = get_device(cfg.get("device", "auto"))
     logger.info(f"Using device: {device}")
 
-    best_value, best_params = run_optuna_search(cfg, device)
-    logger.info(f"Best value: {best_value:.4f}")
-    logger.info(f"Best params: {best_params}")
+    # Agents orchestration
+    search_agent = SearchAgent(run_optuna_search, name="optuna")
+    evaluation_agent = EvaluationAgent()
+    coordinator = CoordinatorAgent(search_agent, evaluation_agent, logger=logger)
+
+    summary = coordinator.execute(cfg, device)
+    logger.info(f"Run complete. Summary: {summary}")
 
 
 if __name__ == "__main__":
