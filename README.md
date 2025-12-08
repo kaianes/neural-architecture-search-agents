@@ -5,6 +5,12 @@
 
 Designing deep neural network (DNN) architectures is complex and resource-intensive. This project provides an **AI Agent-based Neural Architecture Search (NAS)** framework that automates model design through coordinated agents. The goal is high accuracy, computational efficiency, and sustainability (Green AI principles).
 
+
+> **Note**
+> Please check the 1rst semester mid-term prototype documentation for detailed instructions and examples.
+
+[![Open](https://img.shields.io/badge/Open_File-blue)](docs/report/mid-term-prototype-explanation.md)
+
 ---
 
 ## Objectives
