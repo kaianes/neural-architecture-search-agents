@@ -1,10 +1,26 @@
-# Automated decision core - V0.0.1
+#  Mid-term Prototype Explanation 
+#### (Autonomous NAS, V0.1)
 
-## Summary
+![ANAS](../figures/ANAS-logo.png){: style="max-width: 40%; height: auto;" }
 
 
-In this stage of the project, we developed the **foundational system** for an **autonomous Neural Architecture Search (NAS)** framework using Python and PyTorch.
-The goal is to enable an **AI-driven process that automatically designs, trains, and evaluates deep neural network architectures** with a focus on **efficiency and sustainability**.
+In this stage of the project, the project has a foundational system for an **autonomous Neural Architecture Search (NAS)** framework using Python.
+
+The goal is to reduce human intervention in DNN design by enabling an AI-driven process that **automatically designs, trains, and evaluates deep neural network architectures**.
+
+Additionallly, the project aims to minimize the computational cost of model search, aligning with **Green AI** principles that focus on sustainability, energy-efficient and eco-friendly AI research.
+
+## What the prototype does
+- AI-agent-based Neural Architecture Search (NAS) pipeline focused on accuracy, efficiency, and sustainability.
+- Uses a small CNN baseline and Optuna to explore hyperparameters (channels, kernel size, dropout, learning rate).
+- Tracks optional efficiency metrics (params, FLOPs) and can log carbon metrics *if CodeCarbon is installed.*
+- Produces a summarized report of the search, with best trial and leaderboard.
+
+## Agent pipeline (how it runs)
+1) **CoordinatorAgent** orchestrates the run.  
+2) **SearchAgent (Optuna)** samples hyperparameters and trains/evaluates SimpleCNN for a few epochs.  
+3) **EvaluationAgent** summarizes results (best value/params, top trials, attrs).  
+4) Summary is logged; a JSON summary is saved to `experiments/results/optuna_summary_<timestamp>.json`.
 
 The current implementation uses:
 
@@ -19,17 +35,9 @@ The codebase is modular and already includes:
 * A **search pipeline** (`optuna_search.py`) that runs multiple trials, evaluates models, and logs results.
 * **Utility modules** for metrics, logging, environment setup, and dataset loading.
 * **Carbon tracking integration** for sustainability assessment.
-* A structured directory ready for multi-agent expansion (Coordinator, Evaluation, and Sustainability Agents).
+* A structured directory ready for multi-agent expansion (Coordinator, Search and Evaluation Agents).
 
-In essence, the system currently functions as an **automated experimental scientist** — it generates, tests, and evaluates neural architectures, learning which designs are most efficient in terms of accuracy, computation, and environmental impact.
-
-## Objective
-
-The purpose of this project, **Efficient Deep Neural Network Architecture Search Using AI Agents**, is to create an intelligent system that can automatically design and optimize deep neural networks (DNNs). Instead of manually deciding the number of layers, neurons, or hyperparameters, AI agents will handle these tasks autonomously, improving both **efficiency** and **sustainability**.
-
-The project aims to reduce human intervention in DNN design and minimize the computational cost of model search, aligning with **Green AI** principles that focus on energy-efficient and eco-friendly AI research.
-
----
+> In essence, the system currently functions as an **automated experimental scientist**: it generates, tests, and evaluates neural architectures, learning which designs are most efficient in terms of accuracy, computation, and environmental impact.
 
 ##  What’s Happening During Execution
 
@@ -45,11 +53,15 @@ the following process unfolds:
 
 The system reads the YAML configuration file (`baseline.yaml`) to get all experiment parameters—dataset type, training setup, search strategy, and file paths.
 
+Optuna runs `n_trials` (from config), trains quick epochs, and evaluates accuracy.
+
 ### 2. **Environment Initialization**
 
 The script sets a random seed for reproducibility and selects the best available device (CPU or GPU). All required directories for results and artifacts are created automatically.
 
 ### 3. **Neural Architecture Search (NAS) Begins**
+
+Datasets (MNIST/Fashion-MNIST/CIFAR-10) auto-download to data/ on first run.
 
 An AI agent (in this baseline, using **Optuna**) starts trying out different neural network configurations. For each trial:
 
@@ -63,11 +75,9 @@ Optuna evaluates all trials, tracking accuracy and computational metrics (like p
 
 ### 5. **Logging and Reporting**
 
-Results—including accuracy, parameters, FLOPs, and energy consumption (if available)—are logged for analysis. The system outputs the best configuration and saves it for later use or further optimization.
+Results—including accuracy, parameters, FLOPs, and energy consumption (if available)—are logged for analysis. The system outputs the best configuration and saves it for later use or further optimization saved to `experiments/results/optuna_summary_<timestamp>.json`
 
----
-
-## 🧠 Meaning of the Tools Used
+### Meaning of the Tools Used
 
 | Tool / Library              | Purpose                     | Description                                                                                 |
 | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
@@ -80,30 +90,22 @@ Results—including accuracy, parameters, FLOPs, and energy consumption (if avai
 | **YAML**                    | Configuration Language      | Stores experiment parameters and paths in a readable format.                                |
 | **TQDM**                    | Progress Bars               | Displays real-time training progress during each NAS trial.                                 |
 
----
 
-## Simplified Flow Summary
+## Files to point out (for the demo)
+1. `src/main.py`: entrypoint; wires coordinator → search → evaluation.
+2. `src/agents/`: coordinator_agent.py, search_agent.py, evaluation_agent.py.
+3. `src/nas/optuna_search.py`: Optuna objective, trial loop, and result persistence.
+4. `src/models/simple_cnn.py`: baseline CNN being searched.
+5. `src/datasets/loader.py`: TorchVision loaders + normalization for MNIST/Fashion-MNIST/CIFAR-10.
+6. `experiments/configs/baseline.yaml`: knobs for dataset, epochs, trials, paths.
+7. `experiments/results/`: where the JSON summary is saved.
 
-```
-Configuration → Dataset Loading → Agent (Optuna) → Model Trials → Evaluation → Best Architecture → Logging
-```
-
-1. **Load config:** reads YAML settings.
-2. **Prepare dataset:** downloads and loads MNIST/CIFAR.
-3. **Run trials:** Optuna explores different CNN designs.
-4. **Evaluate:** measures accuracy and FLOPs.
-5. **Select:** saves the best-performing design.
-
----
-
-## 🌿 Why It Matters
+##  Why It Matters
 
 * **Automation:** Reduces human workload in DNN design.
 * **Efficiency:** Finds high-performing architectures with fewer experiments.
 * **Sustainability:** Tracks and minimizes computational waste.
 * **Scalability:** Framework can be extended to larger datasets or more complex NAS strategies.
-
----
 
 
 | Aspect                      | Description                                                                                         |
@@ -114,6 +116,14 @@ Configuration → Dataset Loading → Agent (Optuna) → Model Trials → Evalua
 | **Type of Intelligence**    | Multi-agent system with autonomous learning and coordinated decision-making.                        |
 | **Learning Process**        | Experiment-driven: the system tests, evaluates, and improves based on obtained results.             |
 | **Focus**                   | Computational efficiency, sustainability (low CO₂e), and automation of neural design.               |
-| **Involved Agents**         | Search Agent, Evaluation Agent, Optimization Agent, Coordinator Agent, Sustainability Agent.        |
+| **Involved Agents**         | Coordinator Agent, Search Agent, Evaluation Agent.        |
 | **Decision-Making Process** | Each agent has a defined role and shares information to collaboratively enhance system performance. |
 | **Expected Outcome**        | An autonomous system capable of designing efficient and environmentally responsible AI models.      |
+
+## Next Steps
+* Expand search strategies to include Reinforcement Learning and Evolutionary Algorithms.
+* Integrate more complex datasets (e.g., CIFAR-100, ImageNet).
+* Enhance the agent communication protocol for better coordination.
+* Implement a more sophisticated evaluation agent with deeper analysis capabilities.
+* Cloud implementation.
+* User interface for easier experiment configuration and monitoring.

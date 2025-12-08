@@ -1,5 +1,7 @@
 # Efficient Deep Neural Network Architecture Search Using AI Agents
----
+
+![ANAS](docs/figures/ANAS-logo.png){: style="max-width: 40%; height: auto;" }
+
 
 ## Overview
 
@@ -11,8 +13,6 @@ Designing deep neural network (DNN) architectures is complex and resource-intens
 
 [![Open](https://img.shields.io/badge/Open_File-blue)](docs/report/mid-term-prototype-explanation.md)
 
----
-
 ## Objectives
 
 - Develop a **multi-agent system** for automated architecture search and evaluation.
@@ -21,15 +21,12 @@ Designing deep neural network (DNN) architectures is complex and resource-intens
 - Measure and analyze **sustainability metrics** such as FLOPs, CO2e, and model size.
 - Demonstrate reproducibility and scalability across standard datasets (e.g., MNIST, CIFAR-10).
 
----
-
 ## System Architecture
 
-![System Architecture Diagram](docs/figures/mid-term-prototype-architecture.png)
+![System Architecture Diagram](docs/figures/mid-term-prototype-architecture.png){: style="max-width: 60%; height: auto;" }
 
 Agents communicate via in-memory handoffs; search results are summarized and logged.
 
----
 
 ## Key Features
 
@@ -39,7 +36,6 @@ Agents communicate via in-memory handoffs; search results are summarized and log
 - **Green AI Compliance:** Tracks emissions and promotes efficient searches.
 - **Explainability:** Evaluation agent produces summaries (best value/params, top trials, attrs).
 
----
 
 ## Installation
 
@@ -54,8 +50,6 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
-
 ## Quick Start
 
 Run a minimal experiment with baseline settings:
@@ -65,8 +59,6 @@ python src/main.py --config experiments/configs/baseline.yaml
 ```
 
 The command executes the Coordinator → Search (Optuna) → Evaluation pipeline and logs a summary.
-
----
 
 ## Datasets
 
@@ -78,8 +70,6 @@ Supported datasets:
 
 Each dataset will be automatically downloaded and preprocessed.
 
----
-
 ## Metrics
 
 | Metric      | Description                      |
@@ -90,15 +80,12 @@ Each dataset will be automatically downloaded and preprocessed.
 | CO2e        | Estimated carbon emissions       |
 | Search Time | NAS process duration             |
 
----
 
 ## Agent Pipeline Details
 
 - **CoordinatorAgent:** Orchestrates the run, delegates to search and evaluation, logs the final summary.
 - **SearchAgent (Optuna):** Samples hyperparameters and executes `nas/optuna_search.py`. Returns best value/params plus trial records and attrs (params/FLOPs/trial count).
 - **EvaluationAgent:** Summarizes the search with best metrics and a short leaderboard.
-
----
 
 ## Project Structure
 
@@ -126,8 +113,6 @@ docs/
   report/                 # Project report drafts
 ```
 
----
-
 ## Sustainability & Ethics
 
 Aligned with **Green AI** principles:
@@ -136,10 +121,6 @@ Aligned with **Green AI** principles:
 - CO2e estimation for every experiment when CodeCarbon is installed.
 - Encourages low-power hardware usage where possible.
 
----
-
 ## License
 
 MIT License. See `LICENSE`.
-
----
