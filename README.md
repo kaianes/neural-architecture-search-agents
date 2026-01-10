@@ -46,8 +46,8 @@ Agents communicate via in-memory handoffs; search results are summarized and log
 ## Installation
 
 ```bash
-git clone https://github.com/kaianes/efficient-nas-ai-agents.git
-cd efficient-nas-ai-agents
+git clone https://github.com/kaianes/neural-architecture-search-agents.git
+cd neural-architecture-search-agents
 python -m venv venv
 # On Unix/macOS
 source venv/bin/activate
