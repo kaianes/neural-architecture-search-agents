@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+# Simple CNN model definition
 class SimpleCNN(nn.Module):
     def __init__(self, in_ch=1, num_classes=10, conv_channels=32, kernel_size=3, dropout=0.1):
         super().__init__()

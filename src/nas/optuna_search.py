@@ -14,7 +14,7 @@ from utils.carbon import carbon_tracker
 
 logger = get_logger(__name__)
 
-
+# Training and evaluation functions
 def train_one_epoch(model, loader, device, optimizer, criterion):
     model.train()
     total_loss, total_acc, n = 0.0, 0.0, 0
@@ -30,7 +30,7 @@ def train_one_epoch(model, loader, device, optimizer, criterion):
         n += x.size(0)
     return total_loss / n, total_acc / n
 
-
+# Evaluation function
 def evaluate(model, loader, device, criterion):
     model.eval()
     total_loss, total_acc, n = 0.0, 0.0, 0
@@ -44,7 +44,7 @@ def evaluate(model, loader, device, criterion):
             n += x.size(0)
     return total_loss / n, total_acc / n
 
-
+# Objective function for Optuna
 def objective(trial: optuna.trial.Trial, cfg, device):
     conv_channels = trial.suggest_categorical("conv_channels", [16, 32, 48, 64])
     kernel_size = trial.suggest_categorical("kernel_size", [3, 5])
@@ -78,7 +78,7 @@ def objective(trial: optuna.trial.Trial, cfg, device):
     trial.set_user_attr("flops", int(flops))
     return float(test_acc)
 
-
+# Trial record serialization
 def _trial_record(t: optuna.trial.FrozenTrial):
     return {
         "number": t.number,
@@ -87,7 +87,7 @@ def _trial_record(t: optuna.trial.FrozenTrial):
         "attrs": {k: v for k, v in t.user_attrs.items()},
     }
 
-
+# Persisting results to a JSON file
 def _persist_results(cfg, payload):
     results_dir = Path(cfg.get("paths", {}).get("results", "experiments/results"))
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -100,7 +100,7 @@ def _persist_results(cfg, payload):
     except Exception as exc:
         logger.warning(f"Failed to save Optuna summary to {fname}: {exc}")
 
-
+# Main function to run Optuna search
 def run_optuna_search(cfg, device):
     study = optuna.create_study(direction=cfg["optuna"]["direction"])
     logger.info("Starting Optuna NAS search…")

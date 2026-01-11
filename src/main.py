@@ -9,7 +9,7 @@ from agents.search_agent import SearchAgent
 from agents.evaluation_agent import EvaluationAgent
 from agents.coordinator_agent import CoordinatorAgent
 
-
+# Load configuration from a YAML file
 def load_config(cfg_path: str):
     p = Path(cfg_path)
     if not p.exists():
@@ -23,7 +23,7 @@ def load_config(cfg_path: str):
         )
     return cfg
 
-
+# Ensure necessary directories exist
 def ensure_dirs(cfg):
     default_paths = {
         "results": "experiments/results",
@@ -35,13 +35,13 @@ def ensure_dirs(cfg):
     for p in cfg["paths"].values():
         Path(p).mkdir(parents=True, exist_ok=True)
 
-
+# Parse command-line arguments
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", type=str, default="experiments/configs/baseline.yaml")
     return ap.parse_args()
 
-
+# Main execution function
 def main():
     logger = get_logger(__name__)
     args = parse_args()

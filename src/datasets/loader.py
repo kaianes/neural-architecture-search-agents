@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-
+# Data loaders for different datasets
 def get_loaders(name: str = "MNIST", batch_size: int = 128, num_workers: int = 2):
     name = name.upper()
     if name in ["MNIST", "FASHIONMNIST"]:
