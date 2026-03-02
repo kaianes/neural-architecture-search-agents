@@ -18,3 +18,11 @@ rich>=13.7
 # FLOPs & Carbon
 thop>=0.1.1.post2209072238
 codecarbon>=2.4 # optional; disable if issues
+
+# Agents Orchestration
+crewai
+litellm
+litellm[proxy]
+
+# Memory
+faiss-cpu>=1.8.0 # optional; memory module falls back to numpy if unavailable
