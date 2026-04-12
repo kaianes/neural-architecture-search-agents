@@ -1,17 +1,165 @@
-research_task:
+profile_dataset_task:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
-  expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    Use only the dataset inspection tool configured for this run and analyze
+    only the returned schema.
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    Your task is to produce a dataset profile that distinguishes clearly between:
+    1. direct observations supported by the inspection output
+    2. cautious inferences that are plausible but not fully confirmed
+
+    You must infer, only when supported by evidence:
+    - likely data modality
+    - likely task type
+    - input structure
+    - dataset scale
+    - target availability and characteristics
+    - relevant data quality flags
+    - constraints that may affect downstream NAS stages
+
+    Important rules:
+    - Do not use external knowledge beyond what is present in the returned schema.
+    - Do not rely on the dataset name alone as proof of task definition.
+    - Do not assume a supervised objective if no target or annotation field is exposed.
+    - If the task type cannot be determined from the observations, say it is undetermined.
+    - Do not propose final model architectures.
+    - Do not define search strategy.
+    - Do not prescribe downstream actions as if they were already decided.
+    - Be explicit when uncertainty comes from missing labels, missing metadata,
+      hidden configs, or incomplete schema coverage.
+    - Ground each conclusion in the inspection evidence.
+
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A structured report with the following sections:
+
+    1. Data Modality
+       - direct observations
+       - supported inference
+    2. Likely Task Type
+       - direct observations
+       - supported inference
+       - confidence level
+    3. Input Structure
+    4. Dataset Size Summary
+    5. Target Summary
+    6. Data Quality Flags
+    7. NAS-Relevant Constraints
+    8. Uncertainty Notes
+    9. Handoff Notes for the Next Agent
+
+    Additional formatting requirements:
+    - In each section, clearly separate observed facts from inferred conclusions.
+    - When evidence is insufficient, explicitly state "undetermined from current observations".
+    - Keep the report analytical and neutral.
+
+build_search_space_task:
+  description: >
+    Read only the profiler report from the previous task and produce an executable
+    NAS search space plan in JSON.
+
+    Behavior requirements:
+    - Be conservative and pragmatic.
+    - Prefer simple, well-established model families.
+    - Include only model families clearly supported by profiler evidence.
+    - Use small, bounded, realistic hyperparameter ranges.
+    - Prefer categorical choices and small discrete ranges over wide continuous spaces.
+    - Express uncertainty when profiler evidence is incomplete.
+
+    Strict constraints:
+    - Do not inspect raw datasets.
+    - Do not call dataset inspection tools.
+    - Do not train models.
+    - Do not run Optuna.
+    - Do not evaluate model performance.
+    - Do not select a final model.
+
+    Output must be strict JSON only (no markdown, no code fences, no prose before/after JSON).
+
+  expected_output: >
+    Return a strict JSON object exactly with these top-level keys:
+
+    {
+      "profile_summary": {
+        "data_modality": "...",
+        "likely_task_type": "...",
+        "key_constraints": ["..."]
+      },
+      "selected_model_families": [
+        {
+          "family": "cnn1d|cnn2d|rnn|mlp|...",
+          "rationale": "why this family is supported by profiler evidence",
+          "priority": "high|medium|low"
+        }
+      ],
+      "search_space": {
+        "<family_name>": {
+          "hyperparameters": {
+            "<param_name>": {
+              "type": "int|float|categorical|bool",
+              "values": ["for categorical"],
+              "min": "for numeric",
+              "max": "for numeric",
+              "step": "optional",
+              "log": "optional true/false"
+            }
+          }
+        }
+      },
+      "uncertainty_notes": ["..."],
+      "handoff_notes": ["..."]
+    }
+
+train_search_space_task:
+  description: >
+    Execute Neural Architecture Search using the search space from the builder agent.
+
+    Input: Use the search space JSON from the previous task with model families and hyperparameter ranges.
+
+    Your task is to:
+    1. Parse the search space and validate all hyperparameter specifications.
+    2. Apply all handoff_notes constraints (data preprocessing, regularization, CV strategy).
+    3. For each model family (ordered by priority):
+       - Create an Optuna Study
+       - Execute N trials (default 50 per family)
+       - For each trial:
+         * Suggest hyperparameters from search space
+         * Build the model dynamically using factory pattern
+         * Train with stratified K-fold cross-validation
+         * Evaluate on test set
+         * Report metric to Optuna
+    4. Collect best_params, best_value, and trial history for each family.
+    5. Identify overall best model family.
+    6. Generate comprehensive optimization report.
+
+    Strict constraints:
+    - Do not modify the search space.
+    - Do not skip or ignore handoff_notes.
+    - Do not train outside the framework (use provided trainer with CV).
+    - Do not evaluate on training data.
+    - Do not select a final architecture (report best_params only).
+
+  expected_output: >
+    Return a strict JSON object with these top-level keys:
+
+    {
+      "profile_summary": { ... },
+      "selected_families": ["cnn1d", "mlp"],
+      "families_results": {
+        "cnn1d": {
+          "study_name": "agentic_nas_cnn1d",
+          "n_trials_completed": 50,
+          "best_value": 0.925,
+          "best_params": { "num_blocks": 2, "filters": 64, ... },
+          "best_trial_number": 42,
+          "trial_history": [
+            { "trial_id": 0, "params": {...}, "value": 0.85, "state": "COMPLETE" },
+            ...
+          ],
+          "sampler": "TPESampler"
+        },
+        "mlp": { ... }
+      },
+      "best_overall_family": "cnn1d",
+      "task_type": "binary_classification",
+      "num_classes": 2,
+      "input_shape": [2500, 1]
+    }

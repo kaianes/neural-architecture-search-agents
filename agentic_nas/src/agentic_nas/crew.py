@@ -1,64 +1,149 @@
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
-from crewai.agents.agent_builder.base_agent import BaseAgent
-from typing import List
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+from pathlib import Path
+from typing import Optional
+import json
 
-@CrewBase
-class AgenticNas():
-    """AgenticNas crew"""
+import yaml
+from crewai import Agent, Crew, Task
 
-    agents: List[BaseAgent]
-    tasks: List[Task]
+from agentic_nas.data.hf_image_loader import DEFAULT_DENTEX_DATASET_ID
+from agentic_nas.tools.dataset_tools import inspect_sleep_apnea_dataset, inspect_xray_dataset
 
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-    
-    # If you would like to add tools to your agents, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
-    @agent
-    def researcher(self) -> Agent:
-        return Agent(
-            config=self.agents_config['researcher'], # type: ignore[index]
-            verbose=True
+
+BASE_DIR = Path(__file__).resolve().parent
+CONFIG_DIR = BASE_DIR / "config"
+
+
+def load_yaml(file_name: str) -> dict:
+    with open(CONFIG_DIR / file_name, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def build_crew(
+    profile_mode: str = "ecg",
+    dataset_path: Optional[str] = None,
+    hf_dataset_id: str = DEFAULT_DENTEX_DATASET_ID,
+    hf_split: str = "train",
+    hf_config_name: Optional[str] = None,
+    include_trainer: bool = False,
+) -> Crew:
+    """
+    Construir CrewAI com agentes de profiling e builder.
+
+    Args:
+        profile_mode: 'ecg' ou 'xray'
+        dataset_path: path para ECG CSV
+        hf_dataset_id: ID do dataset Hugging Face
+        hf_split: split do HF dataset
+        hf_config_name: config name do HF dataset
+        include_trainer: se True, inclui TrainerAgent no crew (requires X,y data)
+
+    Returns:
+        Crew com agentes configurados
+    """
+    agents_config = load_yaml("agents.yaml")
+    tasks_config = load_yaml("tasks.yaml")
+
+    profiler_cfg = agents_config["dataset_profiler"]
+    builder_cfg = agents_config["builder_agent"]
+
+    profile_task_cfg = tasks_config["profile_dataset_task"]
+    build_task_cfg = tasks_config["build_search_space_task"]
+
+    if profile_mode == "ecg":
+        if not dataset_path:
+            raise ValueError("dataset_path is required when profile_mode='ecg'.")
+
+        selected_tools = [inspect_sleep_apnea_dataset]
+        dataset_context = (
+            f"Profile mode: ECG CSV.\\n"
+            f"Dataset path to inspect: {dataset_path}\\n"
+            "Use tool: inspect_sleep_apnea_dataset(file_path=<dataset_path>)."
         )
 
-    @agent
-    def reporting_analyst(self) -> Agent:
-        return Agent(
-            config=self.agents_config['reporting_analyst'], # type: ignore[index]
-            verbose=True
+    elif profile_mode == "xray":
+        selected_tools = [inspect_xray_dataset]
+        dataset_context = (
+            f"Profile mode: X-ray image dataset via Hugging Face.\\n"
+            f"Dataset id: {hf_dataset_id}\\n"
+            f"Config name: {hf_config_name or '(default)'}\\n"
+            f"Split preference: {hf_split}\\n"
+            "Use tool: inspect_xray_dataset(dataset_id=<id>, split=<split>, config_name=<optional>)."
         )
 
-    # To learn more about structured task outputs,
-    # task dependencies, and task callbacks, check out the documentation:
-    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def research_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['research_task'], # type: ignore[index]
-        )
+    else:
+        raise ValueError("profile_mode must be 'ecg' or 'xray'.")
 
-    @task
-    def reporting_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['reporting_task'], # type: ignore[index]
-            output_file='report.md'
-        )
+    dataset_profiler = Agent(
+        role=profiler_cfg["role"],
+        goal=profiler_cfg["goal"],
+        backstory=profiler_cfg["backstory"],
+        tools=selected_tools,
+        verbose=True,
+        memory=False,
+        allow_delegation=False,
+    )
 
-    @crew
-    def crew(self) -> Crew:
-        """Creates the AgenticNas crew"""
-        # To learn how to add knowledge sources to your crew, check out the documentation:
-        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
+    builder_agent = Agent(
+        role=builder_cfg["role"],
+        goal=builder_cfg["goal"],
+        backstory=builder_cfg["backstory"],
+        tools=[],
+        verbose=True,
+        memory=False,
+        allow_delegation=False,
+    )
 
-        return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
-            process=Process.sequential,
+    profile_dataset_task = Task(
+        description=(
+            f"{profile_task_cfg['description']}\\n\\n"
+            f"Run context:\\n{dataset_context}\\n"
+            "You must call the inspection tool before writing the report."
+        ),
+        expected_output=profile_task_cfg["expected_output"],
+        agent=dataset_profiler,
+    )
+
+    build_search_space_task = Task(
+        description=(
+            f"{build_task_cfg['description']}\\n\\n"
+            "Input: use only the profiler report generated by the previous task."
+        ),
+        expected_output=build_task_cfg["expected_output"],
+        agent=builder_agent,
+        context=[profile_dataset_task],
+    )
+
+    agents = [dataset_profiler, builder_agent]
+    tasks = [profile_dataset_task, build_search_space_task]
+
+    # Opcionalmente adicionar TrainerAgent
+    if include_trainer:
+        trainer_cfg = agents_config.get("trainer_agent", {})
+        train_task_cfg = tasks_config.get("train_search_space_task", {})
+
+        trainer_agent = Agent(
+            role=trainer_cfg.get("role", "Trainer"),
+            goal=trainer_cfg.get("goal", "Train"),
+            backstory=trainer_cfg.get("backstory", ""),
+            tools=[],
             verbose=True,
-            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+            memory=False,
+            allow_delegation=False,
         )
+
+        train_search_space_task = Task(
+            description=train_task_cfg.get("description", "Train") +
+                       "\\n\\nInput: use the search space JSON from the builder agent.",
+            expected_output=train_task_cfg.get("expected_output", "Results"),
+            agent=trainer_agent,
+            context=[build_search_space_task],
+        )
+
+        agents.append(trainer_agent)
+        tasks.append(train_search_space_task)
+
+    return Crew(
+        agents=agents,
+        tasks=tasks,
+        verbose=True,
+    )
