@@ -1,31 +1,32 @@
-"""
-Handoff Handler: Aplica constraints obrigatórios do BuilderAgent ao dataset e modelo
-Responsável por: remoção de duplicatas, reshape, regularização, estratégia de validação cruzada
+﻿"""
+Handoff Handler: applies BuilderAgent constraints to dataset/model pipeline.
 """
 
-from typing import List, Tuple, Optional, Any
+from __future__ import annotations
+
 import re
-import numpy as np
 from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
+import numpy as np
 
 
 @dataclass
 class HandoffConstraint:
-    """Representa uma constraint extraída do handoff_notes"""
-    constraint_type: str  # 'duplicate_removal', 'reshape', 'regularization', 'cv_strategy'
+    """Represents one parsed handoff constraint."""
+
+    constraint_type: str
     description: str
     parameters: dict
 
 
 class HandoffParseError(Exception):
-    """Exceção para erros ao processar handoff notes"""
-    pass
+    """Exception raised when handoff parsing fails."""
 
 
 class HandoffFactory:
-    """Cria e valida constraints a partir de handoff_notes"""
+    """Build and validate constraints from handoff notes."""
 
-    # Padrões regex para extrair constraints comuns
     PATTERNS = {
         "duplicate_removal": r"remove[d]?\s+(\d+)\s+duplicate",
         "reshape": r"reshape\s+(?:from\s+)?(\([\d,\s]+\))\s+to\s+(\([\d,\s]+\))",
@@ -37,20 +38,14 @@ class HandoffFactory:
 
     @staticmethod
     def parse_handoff_notes(handoff_notes: List[str]) -> List[HandoffConstraint]:
-        """
-        Parse lista de handoff notes em constraints estruturadas.
-
-        Args:
-            handoff_notes: Lista de strings do BuilderAgent
-
-        Returns:
-            Lista de HandoffConstraint com types e params extraídos
-        """
-        constraints = []
+        """Parse free-form handoff notes into structured constraints."""
+        constraints: List[HandoffConstraint] = []
         text = " ".join(handoff_notes).lower()
 
-        # Duplicate removal
         match = re.search(HandoffFactory.PATTERNS["duplicate_removal"], text)
+        if match is None:
+            # Covers notes like "address the 56 duplicate rows by deduplication".
+            match = re.search(r"(\d+)\s+duplicate\s+rows?", text)
         if match:
             n_duplicates = int(match.group(1))
             constraints.append(
@@ -61,7 +56,6 @@ class HandoffFactory:
                 )
             )
 
-        # Reshape
         match = re.search(HandoffFactory.PATTERNS["reshape"], text)
         if match:
             shape_from = match.group(1)
@@ -74,7 +68,6 @@ class HandoffFactory:
                 )
             )
 
-        # Stratified KFold
         match = re.search(HandoffFactory.PATTERNS["stratified_kfold"], text)
         if match:
             n_splits = int(match.group(1))
@@ -86,7 +79,6 @@ class HandoffFactory:
                 )
             )
 
-        # L2 Regularization
         if re.search(HandoffFactory.PATTERNS["l2_regularization"], text):
             constraints.append(
                 HandoffConstraint(
@@ -96,7 +88,6 @@ class HandoffFactory:
                 )
             )
 
-        # Aspect ratio handling (X-ray)
         if re.search(HandoffFactory.PATTERNS["aspect_ratio"], text):
             constraints.append(
                 HandoffConstraint(
@@ -109,67 +100,68 @@ class HandoffFactory:
         return constraints
 
 
-def remove_duplicate_rows(data: np.ndarray, n_to_remove: int) -> np.ndarray:
+def remove_duplicate_rows(
+    data: np.ndarray,
+    n_to_remove: int,
+    return_mask: bool = False,
+) -> np.ndarray | Tuple[np.ndarray, np.ndarray]:
     """
-    Remove primeiras N linhas duplicadas do dataset.
+    Remove first N duplicate rows from dataset.
 
     Args:
         data: numpy array (N, features)
-        n_to_remove: número de duplas a remover (handoff constraint)
+        n_to_remove: number of duplicated rows to remove
+        return_mask: whether to return the boolean mask used
 
     Returns:
-        Dataset com duplicatas removidas
+        Cleaned dataset. If return_mask=True, also returns mask.
     """
     if len(data) < n_to_remove:
         print(
-            f"Warning: Dataset tem {len(data)} samples, "
-            f"mas foram pedidas remoção de {n_to_remove} duplicatas. "
-            "Retornando dataset como-está."
+            f"Warning: dataset has {len(data)} samples but requested removing "
+            f"{n_to_remove} duplicates. Returning unchanged data."
         )
+        if return_mask:
+            return data, np.ones(len(data), dtype=bool)
         return data
 
-    # Encontrar primeiras N duplicatas e marcar para remoção
     unique_mask = np.ones(len(data), dtype=bool)
     seen = set()
     removed_count = 0
 
-    for i, row_tuple in enumerate(map(tuple, data)):
+    for idx, row_tuple in enumerate(map(tuple, data)):
         if row_tuple in seen and removed_count < n_to_remove:
-            unique_mask[i] = False
+            unique_mask[idx] = False
             removed_count += 1
         else:
             seen.add(row_tuple)
 
     cleaned_data = data[unique_mask]
-    print(f"Removed {np.sum(~unique_mask)} duplicate rows. "
-          f"Data shape: {data.shape} → {cleaned_data.shape}")
+    print(
+        f"Removed {int(np.sum(~unique_mask))} duplicate rows. "
+        f"Data shape: {data.shape} -> {cleaned_data.shape}"
+    )
+
+    if return_mask:
+        return cleaned_data, unique_mask
     return cleaned_data
 
 
 def reshape_input(data: np.ndarray, target_shape: Tuple[int, ...]) -> np.ndarray:
-    """
-    Reshape array para target shape.
-
-    Args:
-        data: numpy array original
-        target_shape: target shape (ex: (2500, 1) para ECG)
-
-    Returns:
-        Reshaped array
-    """
+    """Reshape an array to target shape."""
     original_shape = data.shape
     try:
         reshaped = np.reshape(data, target_shape)
-        print(f"Reshaping input: {original_shape} → {target_shape}")
+        print(f"Reshaping input: {original_shape} -> {target_shape}")
         return reshaped
-    except ValueError as e:
+    except ValueError as exc:
         raise HandoffParseError(
-            f"Cannot reshape {original_shape} to {target_shape}: {e}"
-        )
+            f"Cannot reshape {original_shape} to {target_shape}: {exc}"
+        ) from exc
 
 
 class HandoffConstraintApplier:
-    """Aplica constraints do handoff ao dataset e modelo"""
+    """Apply parsed handoff constraints to data and training config."""
 
     def __init__(self, handoff_notes: List[str]):
         self.handoff_notes = handoff_notes
@@ -178,28 +170,21 @@ class HandoffConstraintApplier:
     def apply_to_data(
         self, X: np.ndarray, y: Optional[np.ndarray] = None
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
-        """
-        Aplica constraints de pre-processamento ao dataset.
-
-        Args:
-            X: feature array (N, features) ou (N, H, W, C)
-            y: target array (N,) ou None
-
-        Returns:
-            (X_processed, y_processed)
-        """
+        """Apply preprocessing constraints to feature/target arrays."""
         X_proc = X.copy()
 
         for constraint in self.constraints:
             if constraint.constraint_type == "duplicate_removal":
                 n_duplicates = constraint.parameters.get("n_duplicates", 0)
-                X_proc = remove_duplicate_rows(X_proc, n_duplicates)
+                X_proc, unique_mask = remove_duplicate_rows(
+                    X_proc,
+                    n_duplicates,
+                    return_mask=True,
+                )
                 if y is not None:
-                    # Remover mesmos índices de y
-                    y = y[: len(X_proc)]
+                    y = y[unique_mask]
 
             elif constraint.constraint_type == "reshape":
-                # Parse shape string "(2500, 1)" → (2500, 1)
                 shape_str = constraint.parameters["shape_to"]
                 target_shape = self._parse_shape_string(shape_str)
                 X_proc = reshape_input(X_proc, target_shape)
@@ -207,48 +192,35 @@ class HandoffConstraintApplier:
         return X_proc, y
 
     def get_cv_strategy(self) -> Tuple[str, int]:
-        """
-        Extrai estratégia de validação cruzada dos handoff constraints.
-
-        Returns:
-            (strategy_name, n_splits) ex: ('stratified', 5)
-        """
+        """Return CV strategy inferred from constraints."""
         for constraint in self.constraints:
             if constraint.constraint_type == "cv_strategy":
                 strategy = constraint.parameters.get("strategy", "stratified")
                 n_splits = constraint.parameters.get("n_splits", 5)
                 return strategy, n_splits
-
-        # Default (se não especificado)
         return "stratified", 5
 
     def get_regularization_config(self) -> dict:
-        """
-        Extrai configuração de regularização L2.
-
-        Returns:
-            dict com 'l2_enabled' e 'strength'
-        """
+        """Return L2 regularization config inferred from constraints."""
         for constraint in self.constraints:
             if constraint.constraint_type == "regularization":
                 return constraint.parameters
-
         return {"l2_enabled": False, "strength": None}
 
     def should_preserve_aspect_ratio(self) -> bool:
-        """Verifica se deve preservar aspect ratio (para imagens)"""
+        """Whether aspect ratio should be preserved (image mode)."""
         for constraint in self.constraints:
             if constraint.constraint_type == "aspect_ratio":
                 return constraint.parameters.get("preserve_ratio", False)
         return False
 
     def print_constraints_summary(self):
-        """Print resumo de constraints aplicáveis"""
+        """Print summary of parsed constraints."""
         print("=" * 60)
         print("HANDOFF CONSTRAINTS PARSED:")
         print("=" * 60)
         for constraint in self.constraints:
-            print(f"  • [{constraint.constraint_type}] {constraint.description}")
+            print(f"  * [{constraint.constraint_type}] {constraint.description}")
             if constraint.parameters:
                 for key, val in constraint.parameters.items():
                     print(f"      - {key}: {val}")
@@ -256,9 +228,10 @@ class HandoffConstraintApplier:
 
     @staticmethod
     def _parse_shape_string(shape_str: str) -> Tuple[int, ...]:
-        """Parse shape string "(2500, 1)" → (2500, 1)"""
+        """Parse shape string '(2500, 1)' into tuple."""
         import ast
+
         try:
             return tuple(ast.literal_eval(shape_str))
-        except (ValueError, SyntaxError) as e:
-            raise HandoffParseError(f"Invalid shape string: {shape_str}: {e}")
+        except (ValueError, SyntaxError) as exc:
+            raise HandoffParseError(f"Invalid shape string: {shape_str}: {exc}") from exc

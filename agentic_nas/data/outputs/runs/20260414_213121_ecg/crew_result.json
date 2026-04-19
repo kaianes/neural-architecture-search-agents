@@ -1,0 +1,11 @@
+{
+  "raw": "{\n  \"profile_summary\": {\n    \"data_modality\": \"1D Signal / Time-Series (ECG)\",\n    \"likely_task_type\": \"Binary Classification\",\n    \"key_constraints\": [\n      \"Extremely small sample size (n=160)\",\n      \"High input dimensionality (p=2500)\",\n      \"Severe overfitting risk\",\n      \"Inferred sequential dependency\"\n    ]\n  },\n  \"selected_families\": [\n    \"cnn1d\",\n    \"mlp\"\n  ],\n  \"families_results\": {\n    \"cnn1d\": {\n      \"study_name\": \"agentic_nas_cnn1d\",\n      \"n_trials_completed\": 1,\n      \"best_value\": 0.624923076923077,\n      \"best_params\": {\n        \"dropout_rate\": 0.5,\n        \"filters\": 8,\n        \"kernel_size\": 3,\n        \"num_conv_layers\": 2,\n        \"pooling_type\": \"avg\",\n        \"stride\": 1\n      },\n      \"best_trial_number\": 0,\n      \"trial_history\": [\n        {\n          \"trial_id\": 0,\n          \"params\": {\n            \"dropout_rate\": 0.5,\n            \"filters\": 8,\n            \"kernel_size\": 3,\n            \"num_conv_layers\": 2,\n            \"pooling_type\": \"avg\",\n            \"stride\": 1\n          },\n          \"value\": 0.624923076923077,\n          \"state\": \"COMPLETE\"\n        }\n      ],\n      \"sampler\": \"TPESampler\"\n    },\n    \"mlp\": {\n      \"study_name\": \"agentic_nas_mlp\",\n      \"n_trials_completed\": 1,\n      \"best_value\": 0.624923076923077,\n      \"best_params\": {\n        \"dropout_rate\": 0.6,\n        \"hidden_units\": 32,\n        \"num_layers\": 1,\n        \"use_batchnorm\": false\n      },\n      \"best_trial_number\": 0,\n      \"trial_history\": [\n        {\n          \"trial_id\": 0,\n          \"params\": {\n            \"dropout_rate\": 0.6,\n            \"hidden_units\": 32,\n            \"num_layers\": 1,\n            \"use_batchnorm\": false\n          },\n          \"value\": 0.624923076923077,\n          \"state\": \"COMPLETE\"\n        }\n      ],\n      \"sampler\": \"TPESampler\"\n    }\n  },\n  \"best_overall_family\": \"cnn1d\",\n  \"task_type\": \"binary_classification\",\n  \"num_classes\": 2,\n  \"input_shape\": [\n    2500\n  ]\n}",
+  "json_dict": null,
+  "token_usage": {
+    "total_tokens": 11936,
+    "prompt_tokens": 8702,
+    "cached_prompt_tokens": 0,
+    "completion_tokens": 3234,
+    "successful_requests": 5
+  }
+}

@@ -3,7 +3,7 @@ Model Factory: Cria instâncias de modelos baseado no family_name e params
 Suporta: CNN1D (ECG), MLP (baseline), CNN2D Detection (X-ray)
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple
 import torch
 import torch.nn as nn
 
@@ -40,12 +40,17 @@ def build_model(
         ... )
     """
     if family_name == "cnn1d":
+        num_blocks = params.get("num_blocks", params.get("num_conv_layers", 2))
+        pooling_type = params.get("pooling_type", params.get("pooling", "max"))
+        conv_stride = params.get("conv_stride", params.get("stride", 1))
+
         return CNN1D(
             input_length=input_shape[0],
-            num_blocks=params.get("num_blocks", 2),
+            num_blocks=num_blocks,
             filters=params.get("filters", 32),
             kernel_size=params.get("kernel_size", 3),
-            pooling_type=params.get("pooling_type", "max"),
+            pooling_type=pooling_type,
+            conv_stride=conv_stride,
             dropout_rate=params.get("dropout_rate", 0.2),
             num_classes=num_classes,
         )
@@ -93,6 +98,7 @@ class CNN1D(nn.Module):
         filters: int = 32,
         kernel_size: int = 3,
         pooling_type: str = "max",
+        conv_stride: int = 1,
         dropout_rate: float = 0.2,
         num_classes: int = 2,
     ):
@@ -102,18 +108,21 @@ class CNN1D(nn.Module):
         self.num_blocks = num_blocks
         self.filters = filters
         self.kernel_size = kernel_size
+        self.conv_stride = conv_stride
 
         # Sequência de blocos conv
         layers = []
         in_channels = 1
 
         for block_idx in range(num_blocks):
+            conv_padding = "same" if conv_stride == 1 else kernel_size // 2
             layers.append(
                 nn.Conv1d(
                     in_channels,
                     filters,
                     kernel_size=kernel_size,
-                    padding="same",
+                    stride=conv_stride,
+                    padding=conv_padding,
                     bias=True,
                 )
             )
@@ -135,8 +144,9 @@ class CNN1D(nn.Module):
         self.conv_blocks = nn.Sequential(*layers)
 
         # Calcular tamanho de saída após convs
-        reduced_length = input_length // (2 ** num_blocks)
-        flattened_size = filters * reduced_length
+        with torch.no_grad():
+            dummy = torch.zeros(1, 1, input_length)
+            flattened_size = int(self.conv_blocks(dummy).numel())
 
         # Fully connected layers
         self.fc_head = nn.Sequential(

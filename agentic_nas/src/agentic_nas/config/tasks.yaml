@@ -163,3 +163,103 @@ train_search_space_task:
       "num_classes": 2,
       "input_shape": [2500, 1]
     }
+
+evaluate_models_task:
+  description: >
+    Interpret model performance from trainer output and produce a decision-oriented evaluation report.
+
+    Input: Use only the trainer JSON from the previous task.
+
+    Your task is to:
+    1. Interpret performance across model families.
+    2. Compare quality versus computational/complexity cost.
+    3. Assess potential overfitting risk from available evidence.
+    4. Explain why the chosen model family should be preferred.
+    5. Prepare structured handoff notes for the next project stage.
+
+    Strict constraints:
+    - Do not retrain models.
+    - Do not modify trainer outputs.
+    - Do not inspect raw datasets.
+    - Do not run Optuna.
+
+    Output must be strict JSON only (no markdown, no prose before/after JSON).
+
+  expected_output: >
+    Return a strict JSON object with these top-level keys:
+
+    {
+      "selected_model": {
+        "family": "...",
+        "best_value": 0.0,
+        "best_params": { ... },
+        "selection_reasons": ["..."]
+      },
+      "performance_summary": {
+        "task_type": "...",
+        "num_classes": 2,
+        "input_shape": [ ... ],
+        "ranking": [
+          {
+            "family": "...",
+            "best_value": 0.0,
+            "mean_trial_value": 0.0,
+            "trial_value_std": 0.0,
+            "n_trials_completed": 0,
+            "cost_score": 0.0,
+            "efficiency_tier": "low|medium|high",
+            "quality_tier": "weak|weak_to_moderate|moderate|strong|excellent",
+            "best_params": { ... }
+          }
+        ]
+      },
+      "cost_quality_tradeoff": {
+        "chosen_family_efficiency_tier": "low|medium|high",
+        "chosen_family_quality_tier": "...",
+        "best_value_margin_vs_next": 0.0,
+        "summary": "..."
+      },
+      "overfitting_assessment": {
+        "risk_level": "low|medium|high",
+        "evidence": { ... },
+        "notes": ["..."]
+      },
+      "failed_families": ["..."],
+      "handoff_notes": ["..."]
+    }
+
+report_results_task:
+  description: >
+    Produce a final markdown report from the evaluator output.
+
+    Input: Use only the evaluator JSON from the previous task.
+
+    The report must include these sections:
+    - Identified problem
+    - Data modality
+    - Chosen strategy
+    - Architecture families considered
+    - Best configuration found
+    - Final performance
+    - Justification for the choice
+    - Limitations
+    - Next steps
+
+    Strict constraints:
+    - Do not rerun training.
+    - Do not modify evaluator outputs.
+    - Do not add unsupported claims.
+
+    Output must be markdown only.
+
+  expected_output: >
+    Return a markdown report with the exact section titles:
+    1. Identified problem
+    2. Data modality
+    3. Chosen strategy
+    4. Architecture families considered
+    5. Best configuration found
+    6. Final performance
+    7. Justification for the choice
+    8. Limitations
+    9. Next steps

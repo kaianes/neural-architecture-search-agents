@@ -135,7 +135,7 @@ def create_objective(
 
         # [5] REPORT RESULTADO
         result = (cv_accuracy + test_accuracy) / 2  # Média entre CV e test
-        print(f"  → CV acc: {cv_accuracy:.4f}, Test acc: {test_accuracy:.4f}, "
+        print(f"  -> CV acc: {cv_accuracy:.4f}, Test acc: {test_accuracy:.4f}, "
               f"Mean: {result:.4f}")
 
         return result
