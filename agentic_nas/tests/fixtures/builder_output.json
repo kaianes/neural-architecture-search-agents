@@ -1,0 +1,42 @@
+{
+  "profile_summary": {
+    "data_modality": "1D Time-Series/Signal (ECG)",
+    "likely_task_type": "Binary Classification",
+    "key_constraints": ["Small sample size", "Fixed-length signal"]
+  },
+  "selected_model_families": [
+    {
+      "family": "cnn1d",
+      "rationale": "Local temporal patterns",
+      "priority": "high"
+    },
+    {
+      "family": "mlp",
+      "rationale": "Baseline for vector data",
+      "priority": "medium"
+    }
+  ],
+  "search_space": {
+    "cnn1d": {
+      "hyperparameters": {
+        "num_blocks": {"type": "int", "min": 1, "max": 2, "step": 1},
+        "filters": {"type": "categorical", "values": [8]},
+        "kernel_size": {"type": "categorical", "values": [3]},
+        "pooling_type": {"type": "categorical", "values": ["max"]},
+        "dropout_rate": {"type": "float", "min": 0.1, "max": 0.2, "step": 0.1},
+        "learning_rate": {"type": "float", "min": 0.001, "max": 0.01, "log": true},
+        "use_batch_norm": {"type": "bool"}
+      }
+    },
+    "mlp": {
+      "hyperparameters": {
+        "num_layers": {"type": "int", "min": 1, "max": 2, "step": 1},
+        "hidden_units": {"type": "categorical", "values": [8, 16]},
+        "dropout_rate": {"type": "float", "min": 0.1, "max": 0.3, "step": 0.1},
+        "activation": {"type": "categorical", "values": ["relu", "selu"]}
+      }
+    }
+  },
+  "uncertainty_notes": ["Synthetic fixture"],
+  "handoff_notes": []
+}

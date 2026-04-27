@@ -5,7 +5,7 @@ Report Agent: builds a final markdown report from evaluator outputs.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class ReportAgent:
@@ -22,13 +22,48 @@ class ReportAgent:
         if "output_json" in evaluator_output and isinstance(evaluator_output["output_json"], dict):
             return evaluator_output["output_json"]
 
-        if "raw" in evaluator_output and isinstance(evaluator_output["raw"], str):
+        for raw_key in ("raw", "output_raw"):
+            if raw_key not in evaluator_output or not isinstance(evaluator_output[raw_key], str):
+                continue
             try:
-                return self._normalize_evaluator_output(evaluator_output["raw"])
+                return self._normalize_evaluator_output(evaluator_output[raw_key])
             except Exception:
                 pass
 
         return evaluator_output
+
+    @staticmethod
+    def _find_first_string_by_key(value: Any, target_key: str) -> Optional[str]:
+        if isinstance(value, dict):
+            candidate = value.get(target_key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+
+            for nested_value in value.values():
+                found = ReportAgent._find_first_string_by_key(nested_value, target_key)
+                if found:
+                    return found
+
+        elif isinstance(value, list):
+            for item in value:
+                found = ReportAgent._find_first_string_by_key(item, target_key)
+                if found:
+                    return found
+
+        return None
+
+    @staticmethod
+    def _clean_modality(value: str) -> str:
+        cleaned = " ".join(value.strip().split())
+        cleaned = cleaned.replace("Time-Series Signal", "Time-Series/Signal")
+        cleaned = cleaned.replace("Time-series Signal", "Time-Series/Signal")
+        return "/".join(part.strip() for part in cleaned.split("/"))
+
+    def _extract_data_modality(self, data: Dict[str, Any]) -> str:
+        modality = self._find_first_string_by_key(data, "data_modality")
+        if not modality:
+            return "Not available."
+        return self._clean_modality(modality)
 
     @staticmethod
     def _to_bullets(items: List[str]) -> str:
@@ -76,7 +111,7 @@ class ReportAgent:
             or performance_summary.get("task_type")
             or "Not available."
         )
-        data_modality = profile_summary.get("data_modality", "Not available.")
+        data_modality = self._extract_data_modality(data)
 
         chosen_strategy = (
             "Agentic NAS with profiler -> builder -> trainer (Optuna) -> evaluator, "
@@ -131,4 +166,3 @@ class ReportAgent:
         )
 
         return markdown
-

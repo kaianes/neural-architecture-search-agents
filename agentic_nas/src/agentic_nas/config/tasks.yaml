@@ -4,52 +4,52 @@ profile_dataset_task:
     only the returned schema.
 
     Your task is to produce a dataset profile that distinguishes clearly between:
-    1. direct observations supported by the inspection output
-    2. cautious inferences that are plausible but not fully confirmed
+      1. direct observations supported by the inspection output
+      2. cautious inferences that are plausible but not fully confirmed
 
-    You must infer, only when supported by evidence:
-    - likely data modality
-    - likely task type
-    - input structure
-    - dataset scale
-    - target availability and characteristics
-    - relevant data quality flags
-    - constraints that may affect downstream NAS stages
+      You must infer, only when supported by evidence:
+      - likely data modality
+      - likely task type
+      - input structure
+      - dataset scale
+      - target availability and characteristics
+      - relevant data quality flags
+      - constraints that may affect downstream NAS stages
 
-    Important rules:
-    - Do not use external knowledge beyond what is present in the returned schema.
-    - Do not rely on the dataset name alone as proof of task definition.
-    - Do not assume a supervised objective if no target or annotation field is exposed.
-    - If the task type cannot be determined from the observations, say it is undetermined.
-    - Do not propose final model architectures.
-    - Do not define search strategy.
-    - Do not prescribe downstream actions as if they were already decided.
-    - Be explicit when uncertainty comes from missing labels, missing metadata,
-      hidden configs, or incomplete schema coverage.
-    - Ground each conclusion in the inspection evidence.
+      Important rules:
+      - Do not use external knowledge beyond what is present in the returned schema.
+      - Do not rely on the dataset name alone as proof of task definition.
+      - Do not assume a supervised objective if no target or annotation field is exposed.
+      - If the task type cannot be determined from the observations, say it is undetermined.
+      - Do not propose final model architectures.
+      - Do not define search strategy.
+      - Do not prescribe downstream actions as if they were already decided.
+      - Be explicit when uncertainty comes from missing labels, missing metadata,
+        hidden configs, or incomplete schema coverage.
+      - Ground each conclusion in the inspection evidence.
 
   expected_output: >
     A structured report with the following sections:
 
-    1. Data Modality
-       - direct observations
-       - supported inference
-    2. Likely Task Type
-       - direct observations
-       - supported inference
-       - confidence level
-    3. Input Structure
-    4. Dataset Size Summary
-    5. Target Summary
-    6. Data Quality Flags
-    7. NAS-Relevant Constraints
-    8. Uncertainty Notes
-    9. Handoff Notes for the Next Agent
+      1. Data Modality
+        - direct observations
+        - supported inference
+      2. Likely Task Type
+        - direct observations
+        - supported inference
+        - confidence level
+      3. Input Structure
+      4. Dataset Size Summary
+      5. Target Summary
+      6. Data Quality Flags
+      7. NAS-Relevant Constraints
+      8. Uncertainty Notes
+      9. Handoff Notes for the Next Agent
 
-    Additional formatting requirements:
-    - In each section, clearly separate observed facts from inferred conclusions.
-    - When evidence is insufficient, explicitly state "undetermined from current observations".
-    - Keep the report analytical and neutral.
+      Additional formatting requirements:
+      - In each section, clearly separate observed facts from inferred conclusions.
+      - When evidence is insufficient, explicitly state "undetermined from current observations".
+      - Keep the report analytical and neutral.
 
 build_search_space_task:
   description: >
@@ -57,20 +57,20 @@ build_search_space_task:
     NAS search space plan in JSON.
 
     Behavior requirements:
-    - Be conservative and pragmatic.
-    - Prefer simple, well-established model families.
-    - Include only model families clearly supported by profiler evidence.
-    - Use small, bounded, realistic hyperparameter ranges.
-    - Prefer categorical choices and small discrete ranges over wide continuous spaces.
-    - Express uncertainty when profiler evidence is incomplete.
+      - Be conservative and pragmatic.
+      - Prefer simple, well-established model families.
+      - Include only model families clearly supported by profiler evidence.
+      - Use small, bounded, realistic hyperparameter ranges.
+      - Prefer categorical choices and small discrete ranges over wide continuous spaces.
+      - Express uncertainty when profiler evidence is incomplete.
 
     Strict constraints:
-    - Do not inspect raw datasets.
-    - Do not call dataset inspection tools.
-    - Do not train models.
-    - Do not run Optuna.
-    - Do not evaluate model performance.
-    - Do not select a final model.
+      - Do not inspect raw datasets.
+      - Do not call dataset inspection tools.
+      - Do not train models.
+      - Do not run Optuna.
+      - Do not evaluate model performance.
+      - Do not select a final model.
 
     Output must be strict JSON only (no markdown, no code fences, no prose before/after JSON).
 
@@ -115,27 +115,27 @@ train_search_space_task:
     Input: Use the search space JSON from the previous task with model families and hyperparameter ranges.
 
     Your task is to:
-    1. Parse the search space and validate all hyperparameter specifications.
-    2. Apply all handoff_notes constraints (data preprocessing, regularization, CV strategy).
-    3. For each model family (ordered by priority):
-       - Create an Optuna Study
-       - Execute N trials (default 50 per family)
-       - For each trial:
-         * Suggest hyperparameters from search space
-         * Build the model dynamically using factory pattern
-         * Train with stratified K-fold cross-validation
-         * Evaluate on test set
-         * Report metric to Optuna
-    4. Collect best_params, best_value, and trial history for each family.
-    5. Identify overall best model family.
-    6. Generate comprehensive optimization report.
+      1. Parse the search space and validate all hyperparameter specifications.
+      2. Apply all handoff_notes constraints (data preprocessing, regularization, CV strategy).
+      3. For each model family (ordered by priority):
+        - Create an Optuna Study
+        - Execute N trials (default 50 per family)
+        - For each trial:
+          * Suggest hyperparameters from search space
+          * Build the model dynamically using factory pattern
+          * Train with stratified K-fold cross-validation
+          * Evaluate on test set
+          * Report metric to Optuna
+      4. Collect best_params, best_value, and trial history for each family.
+      5. Identify overall best model family.
+      6. Generate comprehensive optimization report.
 
-    Strict constraints:
-    - Do not modify the search space.
-    - Do not skip or ignore handoff_notes.
-    - Do not train outside the framework (use provided trainer with CV).
-    - Do not evaluate on training data.
-    - Do not select a final architecture (report best_params only).
+      Strict constraints:
+      - Do not modify the search space.
+      - Do not skip or ignore handoff_notes.
+      - Do not train outside the framework (use provided trainer with CV).
+      - Do not evaluate on training data.
+      - Do not select a final architecture (report best_params only).
 
   expected_output: >
     Return a strict JSON object with these top-level keys:
@@ -171,17 +171,19 @@ evaluate_models_task:
     Input: Use only the trainer JSON from the previous task.
 
     Your task is to:
-    1. Interpret performance across model families.
-    2. Compare quality versus computational/complexity cost.
-    3. Assess potential overfitting risk from available evidence.
-    4. Explain why the chosen model family should be preferred.
-    5. Prepare structured handoff notes for the next project stage.
+      1. Interpret performance across model families.
+      2. Compare quality versus computational/complexity cost.
+      3. Assess potential overfitting risk from available evidence.
+      4. Explain why the chosen model family should be preferred.
+      5. Prepare structured handoff notes for the next project stage.
+      6. Preserve the upstream profile_summary exactly, including data_modality,
+         so the reporting stage can document the experimental setup.
 
     Strict constraints:
-    - Do not retrain models.
-    - Do not modify trainer outputs.
-    - Do not inspect raw datasets.
-    - Do not run Optuna.
+      - Do not retrain models.
+      - Do not modify trainer outputs.
+      - Do not inspect raw datasets.
+      - Do not run Optuna.
 
     Output must be strict JSON only (no markdown, no prose before/after JSON).
 
@@ -189,6 +191,11 @@ evaluate_models_task:
     Return a strict JSON object with these top-level keys:
 
     {
+      "profile_summary": {
+        "data_modality": "...",
+        "likely_task_type": "...",
+        "key_constraints": ["..."]
+      },
       "selected_model": {
         "family": "...",
         "best_value": 0.0,
@@ -235,31 +242,31 @@ report_results_task:
     Input: Use only the evaluator JSON from the previous task.
 
     The report must include these sections:
-    - Identified problem
-    - Data modality
-    - Chosen strategy
-    - Architecture families considered
-    - Best configuration found
-    - Final performance
-    - Justification for the choice
-    - Limitations
-    - Next steps
+      - Identified problem
+      - Data modality
+      - Chosen strategy
+      - Architecture families considered
+      - Best configuration found
+      - Final performance
+      - Justification for the choice
+      - Limitations
+      - Next steps
 
     Strict constraints:
-    - Do not rerun training.
-    - Do not modify evaluator outputs.
-    - Do not add unsupported claims.
+      - Do not rerun training.
+      - Do not modify evaluator outputs.
+      - Do not add unsupported claims.
 
     Output must be markdown only.
 
   expected_output: >
     Return a markdown report with the exact section titles:
-    1. Identified problem
-    2. Data modality
-    3. Chosen strategy
-    4. Architecture families considered
-    5. Best configuration found
-    6. Final performance
-    7. Justification for the choice
-    8. Limitations
-    9. Next steps
+      1. Identified problem
+      2. Data modality
+      3. Chosen strategy
+      4. Architecture families considered
+      5. Best configuration found
+      6. Final performance
+      7. Justification for the choice
+      8. Limitations
+      9. Next steps

@@ -15,6 +15,11 @@ dependencies = [
     "scikit-learn>=1.3.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
 [project.scripts]
 agentic_nas = "agentic_nas.main:run"
 run_crew = "agentic_nas.main:run"
@@ -25,3 +30,7 @@ build-backend = "hatchling.build"
 
 [tool.crewai]
 type = "crew"
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
+testpaths = ["tests"]

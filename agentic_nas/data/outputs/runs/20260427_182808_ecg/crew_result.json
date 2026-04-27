@@ -1,0 +1,11 @@
+{
+  "raw": "# NAS Optimization Report\n\n## Identified problem\nbinary_classification\n\n## Data modality\nNot available.\n\n## Chosen strategy\nAgentic NAS with profiler -> builder -> trainer (Optuna) -> evaluator, using bounded search spaces and ranking models by objective score plus cost/quality trade-off.\n\n## Architecture families considered\n- `cnn1d`: best_value=0.738237524921743, quality=moderate, efficiency=medium\n- `mlp`: best_value=0.738237524921743, quality=moderate, efficiency=low\n\n## Best configuration found\n- Selected family: `cnn1d`\n- `dropout_rate`: `0.2`\n- `filters`: `64`\n- `kernel_size`: `5`\n- `learning_rate`: `0.000878377859972028`\n- `num_blocks`: `2`\n- `pooling_type`: `avg`\n\n## Final performance\n- Best family: `cnn1d`\n- Best objective value: `0.738237524921743`\n- Margin vs next candidate: `0`\n\n## Justification for the choice\n- Highest observed objective value (0.7382).\n- Efficiency tier is medium with cost score 4.6.\n- Margin vs second option (mlp): 0.0000.\n- Trade-off summary: Chosen family balances score 0.7382 with medium estimated cost.\n\n## Limitations\n- Some instability/complexity signals exist; monitor variance in additional runs.\n\n## Next steps\n- Adopt 'cnn1d' as current best candidate with params: {'kernel_size': 5, 'dropout_rate': 0.2, 'learning_rate': 0.000878377859972028, 'num_blocks': 2, 'pooling_type': 'avg', 'filters': 64}.\n- Run a confirmatory experiment with more trials and fixed seed for reproducibility.\n- Track accuracy versus compute cost in the next iteration to validate deployment fit.",
+  "json_dict": null,
+  "token_usage": {
+    "total_tokens": 31853,
+    "prompt_tokens": 24652,
+    "cached_prompt_tokens": 0,
+    "completion_tokens": 7201,
+    "successful_requests": 9
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "20260422_192434_xray",
+  "created_at": "2026-04-22T19:25:29",
+  "mode": "xray",
+  "include_trainer": false,
+  "include_evaluator": false,
+  "include_reporter": false,
+  "agent_outputs": {
+    "profiling_agent": "data\\outputs\\runs\\20260422_192434_xray\\agents\\profiling_agent.json",
+    "builder_agent": "data\\outputs\\runs\\20260422_192434_xray\\agents\\builder_agent.json"
+  },
+  "crew_result_file": "data\\outputs\\runs\\20260422_192434_xray\\crew_result.json"
+}
