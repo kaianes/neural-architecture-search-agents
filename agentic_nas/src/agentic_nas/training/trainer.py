@@ -1,6 +1,6 @@
 """
 Training Loop: train_with_cv(), train_single(), com StratifiedKFold e callbacks
-Responsável por executar treinamento de um modelo específico.
+Responsible for executing the training of a specific model.
 """
 
 from typing import Tuple, Optional, List, Dict, Any
@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 @dataclass
 class TrainingConfig:
-    """Configuração de treinamento"""
+    """Configuration for training"""
     epochs: int = 50
     batch_size: int = 32
     learning_rate: float = 0.001
@@ -29,7 +29,7 @@ class TrainingConfig:
 
 
 class EarlyStopping:
-    """Early stopping baseado em validação"""
+    """Early stopping based on validation loss"""
 
     def __init__(self, patience: int = 10, verbose: bool = False):
         self.patience = patience
@@ -61,12 +61,12 @@ def train_single(
     config: TrainingConfig,
 ) -> float:
     """
-    Treina modelo por uma epoch e retorna val_accuracy.
+    Trains the model for one epoch and returns val_accuracy.
 
     Args:
         model: nn.Module
-        train_loader: DataLoader com dados de treino
-        val_loader: DataLoader com dados de validação
+        train_loader: DataLoader with training data
+        val_loader: DataLoader with validation data
         config: TrainingConfig
 
     Returns:
@@ -161,26 +161,26 @@ def train_with_cv(
     config: Optional[TrainingConfig] = None,
 ) -> float:
     """
-    Treina modelo com Stratified K-Fold Cross-Validation.
+    Trains the model using Stratified K-Fold Cross-Validation.
 
     Args:
-        model: nn.Module (será clonado para cada fold)
+        model: nn.Module (will be cloned for each fold)
         X: feature array (N, features)
         y: target array (N,)
-        n_splits: número de folds (default 5)
-        config: TrainingConfig ou None (usa default)
+        n_splits: number of folds (default 5)
+        config: TrainingConfig or None (uses default)
 
     Returns:
-        float: média de validation accuracy across all folds
+        float: average validation accuracy across all folds
     """
     if config is None:
         config = TrainingConfig()
 
-    # Validar que X é 2D ou 3D
+    # Validate that X is 2D or 3D.
     if X.ndim == 1:
         X = X.reshape(-1, 1)
     elif X.ndim > 3:
-        X = X.reshape(X.shape[0], -1)  # Flatten para models que esperam 2D
+        X = X.reshape(X.shape[0], -1)  # Flatten for models that expect 2D input
 
     if config.verbose:
         print(f"Starting {n_splits}-Fold CV | Shape: X={X.shape}, y={y.shape}")
@@ -195,7 +195,7 @@ def train_with_cv(
         X_train, X_val = X[train_idx], X[val_idx]
         y_train, y_val = y[train_idx], y[val_idx]
 
-        # Converter para tensor
+        # Convert to Tensor
         X_train_tensor = torch.from_numpy(X_train).float()
         y_train_tensor = torch.from_numpy(y_train).long()
         X_val_tensor = torch.from_numpy(X_val).float()
@@ -218,7 +218,7 @@ def train_with_cv(
             num_workers=0,
         )
 
-        # Clone model para este fold
+        # Clone model for this fold.
         import copy
         fold_model = copy.deepcopy(model)
 
